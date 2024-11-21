@@ -12,58 +12,116 @@ LIGHT_RED = '#592125'
 TEXT = '#CCBCBC'
 LIGHT_TEXT = '#DCD0D0'
 
+entry_cnf = {
+    'highlightthickness': 0,
+    'borderwidth': 0,
+    'font': ('Lato', 16),
+
+    'background': BUTTON,
+    'foreground': TEXT,
+}
+
+button_cnf = {
+    'highlightthickness': 0,
+    'borderwidth': 0,
+    'padx': 0,
+    'pady': 0,
+    'font': ('Lato', 16),
+
+    'background': BUTTON,
+    'activebackground': LIGHT_BUTTON,
+
+    'foreground': TEXT,
+    'activeforeground': LIGHT_TEXT,
+}
+
 def open_config(app):
-    config_tk = tk.Toplevel(app.root)
-    config_tk.title('Config')
-    config_tk.configure(background=BACKGROUND)
+    root = tk.Toplevel(app.root)
+    
+    root.title('Config')
+    root.geometry(f'{880}x{150}')
+    root.configure(background=BACKGROUND)
 
-    tag_var = tk.StringVar(config_tk)
-    dir_var = tk.StringVar(config_tk)
-
+    tag_variable = tk.StringVar(root)
+    dir_variable = tk.StringVar(root)
+    
     tag_label = tk.Label(
-        master=config_tk,
+        master=root,
         text='Tags:',
-        height=2,
-        width=10,
+        font=('Lato', 16),
+        
+        background=BACKGROUND,
+        foreground=TEXT,
     )
-    tag_label.grid(row=0, column=0)
-
+    tag_label.place(
+        x=0,
+        y=0,
+        width=80,
+        height=50,
+    )
+    
     tag_entry = tk.Entry(
-        master=config_tk,
-        textvariable=tag_var,
-        width=100,
+        cnf=entry_cnf,
+        master=root,
+        textvariable=tag_variable,
+        font=('Lato', 16),
+        background=BUTTON,
     )
-    tag_entry.grid(row=0, column=1, columnspan=10)
+    tag_entry.place(
+        x=80,
+        y=0,
+        width=800,
+        height=50,
+    )
 
     dir_label = tk.Label(
-        config_tk,
-        text='Directory:',
-        height=2,
-        width=10,
+        master=root,
+        text='Path:',
+        font=('Lato', 16),
+        
+        background=BACKGROUND,
+        foreground=TEXT,
     )
-    dir_label.grid(row=1, column=0)
+    dir_label.place(
+        x=0,
+        y=50,
+        width=80,
+        height=50,
+    )
 
     dir_entry = tk.Entry(
-        config_tk,
-        textvariable=dir_var,
-        width=100
+        cnf=entry_cnf,
+        master=root,
+        textvariable=dir_variable,
+        font=('Lato', 16),
+        background=BUTTON,
     )
-    dir_entry.grid(row=1, column=1, columnspan=10)
-
-    save_button = tk.Button(
-        config_tk,text='Save',
-        command=lambda: save({'home': dir_var.get(), 'tags': tag_var.get().strip().split(' ')}, False)
+    dir_entry.place(
+        x=80,
+        y=50,
+        width=800,
+        height=50,
     )
-    save_button.grid(row=2, column=0)
 
     save_exit_button = tk.Button(
-        config_tk,
+        cnf=button_cnf,
+        master=root,
         text='Save and Exit',
-        command=lambda: save({'home': dir_var.get(), 'tags': tag_var.get().strip().split(' ')}, True)
+        command=lambda: save(),
     )
-    save_exit_button.grid(row=2, column=1)
+    save_exit_button.place(
+        x=0,
+        y=100,
+        width=160,
+        height=50,
+    )
 
-    def save(data: dict, exit: bool = False):
+    def save():
+        data = {
+            'home': dir_variable.get(),
+            'tags': tag_variable.get().strip().split(' ')
+        }
         app.page = 0
         app.update_state(data)
-        if exit: config_tk.destroy()
+        
+        root.destroy()
