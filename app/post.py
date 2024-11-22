@@ -6,3 +6,4 @@ class Post:
     file_url: str
     tags: str
     id: int
+    source: str

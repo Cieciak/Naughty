@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter.filedialog import askdirectory, askopenfile
 
 BACKGROUND = '#1c1d21'
 BUTTON = '#323135'
@@ -39,11 +40,14 @@ def open_config(app):
     root = tk.Toplevel(app.root)
     
     root.title('Config')
-    root.geometry(f'{880}x{150}')
+    root.geometry(f'{880+40}x{150}')
     root.configure(background=BACKGROUND)
 
     tag_variable = tk.StringVar(root)
     dir_variable = tk.StringVar(root)
+
+    tag_variable.set(app.tags)
+    dir_variable.set(app.home)
     
     tag_label = tk.Label(
         master=root,
@@ -71,6 +75,19 @@ def open_config(app):
         x=80,
         y=0,
         width=800,
+        height=50,
+    )
+
+    tag_ask = tk.Button(
+        cnf=button_cnf,
+        master=root,
+        text='...',
+        command=lambda: get_tagfile(),
+    )
+    tag_ask.place(
+        x=880,
+        y=0,
+        width=40,
         height=50,
     )
 
@@ -102,6 +119,18 @@ def open_config(app):
         width=800,
         height=50,
     )
+    dir_ask = tk.Button(
+        cnf=button_cnf,
+        master=root,
+        text='...',
+        command=lambda: get_directory(),
+    )
+    dir_ask.place(
+        x=880,
+        y=50,
+        width=40,
+        height=50,
+    )
 
     save_exit_button = tk.Button(
         cnf=button_cnf,
@@ -125,3 +154,13 @@ def open_config(app):
         app.update_state(data)
         
         root.destroy()
+
+    def get_directory():
+        path = askdirectory(mustexist=False)
+        dir_variable.set(path)
+
+    def get_tagfile():
+        file = askopenfile(defaultextension='tag')
+        tags = ' '.join(file.read().split('\n'))
+        tag_variable.set(tags)
+        file.close()

@@ -10,7 +10,7 @@ class Rule34:
     def __init__(self):
         ...
     
-    def get_posts(self, tags: list[str], limit: int = None, page: int = 0) -> list[Post]:
+    def get_posts(self, tags: list[str], page: int = 0, limit: int = None) -> list[Post]:
         # Set limit for posts
         if limit is None: limit = self.PAGE_SIZE
 
@@ -23,6 +23,7 @@ class Rule34:
         for post in root.findall('post'):
             kwargs = {
                 'sample_url': post.get('sample_url'),
+                'source':     self.__class__.__name__,
                 'file_url':   post.get('file_url'),
                 'tags':       post.get('tags'),
                 'id':         post.get('id'),

@@ -6,7 +6,7 @@ from .config import open_config
 import os.path
 import requests
 from PIL import Image, ImageTk
-from io import BytesIO, FileIO
+from io import BytesIO
 
 class Application:
     MAX_WIDTH  = 800
@@ -127,7 +127,7 @@ class Application:
             cnf=self.button_cnf,
             master=self.root,
             text='Tags',
-            command=lambda: print('Get tags'),
+            command=lambda: self.save_tags(),
         )
         self.tags_button.place(
             x=0,
@@ -251,7 +251,6 @@ class Application:
             self.clients.append(client_instance)
 
     def get_posts(self, tags: list[str] = [], **kwargs) -> list[Post]:
-        print(tags)
         gathered: list[Post] = []
         for client in self.clients:
             gathered += client.get_posts(tags, **kwargs)
