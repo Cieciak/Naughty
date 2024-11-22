@@ -38,6 +38,12 @@ class Application:
         'activeforeground': LIGHT_TEXT,
     }
 
+    label_cnf = {
+        'background': DEFAULT_BG,
+        'foreground': TEXT,
+
+        'font': ('Lato', 16)
+    }
 
 
     def __init__(self, home: str = ''):
@@ -220,6 +226,31 @@ class Application:
             height=35,
         )
 
+        self.source_label = tk.Label(
+            cnf=self.label_cnf,
+            master=self.root,
+            font=('Lato', 10),
+            text='Source'
+        )
+        self.source_label.place(
+            x=160,
+            y=100+self.MAX_HEIGHT,
+            width=80,
+            height=15,
+        )
+
+        self.source_field = tk.Label(
+            cnf=self.label_cnf,
+            master=self.root,
+            font=('Lato', 16),
+        )
+        self.source_field.place(
+            x=160,
+            y=115+self.MAX_HEIGHT,
+            width=80,
+            height=35,
+        )
+
         self.ext_label = tk.Label(
             master=self.root,
             background=self.DEFAULT_BG,
@@ -290,6 +321,7 @@ class Application:
         self.ext_label.config(text=f'{extension.upper()}')
         self.posts_counter.config(text=f'{len(self.posts)}')
         self.page_counter.config(text=f'{self.page}')
+        self.source_field.config(text=f'{self.current.source}')
         if len(self.posts) == 0:
             self.page += 1
             self.posts = self.get_posts(self.tags, page=self.page)
