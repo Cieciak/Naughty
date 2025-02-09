@@ -2,15 +2,19 @@ import tkinter as tk
 from .clients import available_clients, Client
 from .post import Post
 from .config import open_config
+from .queue import PostQueue
 
 import os.path
 import requests
 from PIL import Image, ImageTk
 from io import BytesIO
+from pprint import pprint
 
 class Application:
     MAX_WIDTH  = 800
     MAX_HEIGHT = 800
+
+    EXCLUDED_EXT = ['mp4']
 
     DEFAULT_BG = '#1c1d21'
     BUTTON = '#323135'
@@ -51,11 +55,12 @@ class Application:
 
         self.clients: list[Client] = []
         self.current: Post = None
-        self.posts: list[Post] = []
         self.root = tk.Tk()
         self.home: str = home
         self.tags: list[str] = []
         self.page: int = 0
+
+        self.queue: PostQueue = PostQueue(target=10)
 
         self.textvars: dict[str, tk.StringVar] = {
             'tags': tk.StringVar(self.root),
@@ -83,7 +88,7 @@ class Application:
             cnf=self.button_cnf,
             master=self.root,
             text='Refresh',
-            command=lambda: (self.get_posts(self.tags), self.next_image()),
+            command=lambda: (self.queue.flush(), self.get_posts(self.tags), self.next_image()),
         )
         self.refresh_button.place(
             x=80,
@@ -107,6 +112,22 @@ class Application:
             y=100,
             width=80,
             height=self.MAX_HEIGHT,
+        )
+
+        self.bk_button = tk.Button(
+            cnf=self.button_cnf,
+            master=self.root,
+            text='',
+            command=self.back_image,
+
+            background='#121342',
+            activebackground='#222352',
+        )
+        self.bk_button.place(
+            x=0,
+            y=100+self.MAX_HEIGHT,
+            width=80,
+            height=50,
         )
 
         #Save button
@@ -179,7 +200,7 @@ class Application:
             font=('Lato', 16)
         )
         self.posts_counter.place(
-            x=0,
+            x=80,
             y=115+self.MAX_HEIGHT,
             width=80,
             height=35,
@@ -193,7 +214,7 @@ class Application:
             text='Posts',
         )
         self.posts_counter_label.place(
-            x=0,
+            x=80,
             y=100+self.MAX_HEIGHT,
             width=80,
             height=15, 
@@ -207,7 +228,7 @@ class Application:
             text='Page',
         )
         self.page_counter_label.place(
-            x=80,
+            x=160,
             y=100+self.MAX_HEIGHT,
             width=80,
             height=15,
@@ -220,7 +241,7 @@ class Application:
             font=('Lato', 16)
         )
         self.page_counter.place(
-            x=80,
+            x=160,
             y=115+self.MAX_HEIGHT,
             width=80,
             height=35,
@@ -233,7 +254,7 @@ class Application:
             text='Source'
         )
         self.source_label.place(
-            x=160,
+            x=240,
             y=100+self.MAX_HEIGHT,
             width=80,
             height=15,
@@ -245,7 +266,7 @@ class Application:
             font=('Lato', 16),
         )
         self.source_field.place(
-            x=160,
+            x=240,
             y=115+self.MAX_HEIGHT,
             width=80,
             height=35,
@@ -271,8 +292,6 @@ class Application:
 
         self.next_image()
 
-        self.root.mainloop()
-
     def init_clients(self, configs: dict = {}):
         for client_class in available_clients:
             if client_class in configs:
@@ -281,32 +300,42 @@ class Application:
                 client_instance = client_class()
             self.clients.append(client_instance)
 
-    def get_posts(self, tags: list[str] = [], **kwargs) -> list[Post]:
-        gathered: list[Post] = []
+    def get_posts(self, tags: list[str] = [], **kwargs):
+        returned: list[Post] = []
         for client in self.clients:
-            gathered += client.get_posts(tags, **kwargs)
+            returned += client.get_posts(tags, **kwargs)
 
-        self.posts = gathered
-        return self.posts
+        gathered: list[Post] = [
+            post for post in returned if self.filter_requested(post)
+        ]
+
+        self.queue.extend(
+            gathered
+        )
+
+    @staticmethod
+    def filter_requested(post) -> bool:
+
+        # Ignore all post without file_url
+        if post.file_url == None: return False
+
+        # Ignore all post with some extensions
+        if post.file_url.split('.')[-1] in Application.EXCLUDED_EXT: return False
+
+        return True
     
     def next_image(self):
 
-        # Do not show mp4
-        extension = None
-        while extension in ['mp4', None]:
-            self.current = self.posts.pop(0)
-            *_, extension = self.current.file_url.split('.')
+        self.current = self.queue.pop()
 
-        # Download image
         buffer = BytesIO(requests.get(self.current.sample_url).content)
         pillow = Image.open(buffer)
 
-        # Resize image to fit
+        # Resize image to fit in the middle
         width, height = pillow.size
         if height > self.MAX_HEIGHT:
             width *= self.MAX_HEIGHT / height
             height = self.MAX_HEIGHT
-        pillow = pillow.resize((int(width), int(height)))
         if width > self.MAX_WIDTH:
             height *= self.MAX_WIDTH / width
             width   = self.MAX_WIDTH
@@ -316,15 +345,23 @@ class Application:
         self.image.config(image=tk_image)
         self.image.tk_image = tk_image # Prevent garbage collection
 
+        # Handle updating the GUI
         self.textvars['tags'].set(self.current.tags)
-
-        self.ext_label.config(text=f'{extension.upper()}')
-        self.posts_counter.config(text=f'{len(self.posts)}')
+        self.ext_label.config(text=f'{self.current.file_url.split('.')[-1].upper()}')
+        self.posts_counter.config(text=f'{self.queue.length}')
         self.page_counter.config(text=f'{self.page}')
         self.source_field.config(text=f'{self.current.source}')
-        if len(self.posts) == 0:
+
+        # Update page
+        if self.queue.empty:
             self.page += 1
-            self.posts = self.get_posts(self.tags, page=self.page)
+            self.get_posts(self.tags, page=self.page)
+
+    def back_image(self):
+        # Numbers are one bigger because the queue is post incrementing, plus using next_image
+        if self.queue.pointer == 1: return
+        self.queue.pointer -= 2
+        self.next_image()
 
     def save_image(self):
         # File extension
@@ -356,3 +393,6 @@ class Application:
     def update_state(self, data: dict):
         for key, val in data.items():
             setattr(self, key, val)
+
+    def start(self):
+        self.root.mainloop()

@@ -6,4 +6,4 @@ from ..post import Post
 class Client:
     def get_posts(self, tags: list[str], **kwagrs) -> list[Post]: ...
 
-available_clients: list[Client]  = [Rule34, e621]
+available_clients: list[Client]  = [Rule34,]
