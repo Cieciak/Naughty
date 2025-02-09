@@ -57,8 +57,9 @@ class Application:
         self.current: Post = None
         self.root = tk.Tk()
         self.home: str = home
-        self.tags: list[str] = []
         self.page: int = 0
+
+        self.tags: list[str] = list()
 
         self.queue: PostQueue = PostQueue(target=10)
 

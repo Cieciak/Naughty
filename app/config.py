@@ -1,4 +1,6 @@
 import tkinter as tk
+import os
+
 from tkinter.filedialog import askdirectory, askopenfile
 
 BACKGROUND = '#1c1d21'
@@ -46,7 +48,9 @@ def open_config(app):
     tag_variable = tk.StringVar(root)
     dir_variable = tk.StringVar(root)
 
-    tag_variable.set(app.tags)
+    raw_tags = ' '.join(app.tags)
+
+    tag_variable.set(raw_tags)
     dir_variable.set(app.home)
     
     tag_label = tk.Label(
@@ -157,6 +161,12 @@ def open_config(app):
 
     def get_directory():
         path = askdirectory(mustexist=False)
+
+        if not os.path.exists(path):
+            os.makedirs(
+                path
+            )
+
         dir_variable.set(path)
 
     def get_tagfile():
