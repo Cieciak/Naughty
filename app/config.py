@@ -1,6 +1,7 @@
 import tkinter as tk
 import os
 
+from configparser import ConfigParser
 from tkinter.filedialog import askdirectory, askopenfile
 
 BACKGROUND = '#1c1d21'
@@ -37,6 +38,49 @@ button_cnf = {
     'foreground': TEXT,
     'activeforeground': LIGHT_TEXT,
 }
+
+def ensure_config(path: str) -> bool:
+    file_test = os.path.isfile(path)
+
+    if not file_test:
+        generate_config(path)
+    
+    config = ConfigParser()
+    config.read(path)
+
+    setting_test = config.has_option('settings', 'profile')
+    if not setting_test:
+        generate_config(path)
+
+    return True
+
+def generate_config(path: str) -> dict:
+    config = ConfigParser()
+
+    config['settings'] = {
+        'profile': 'default',
+    }
+    config['empty'] = {
+        'tags': '',
+        'dir': '',
+    }
+    config['default'] = {
+        'tags': '-ai_generated',
+        'dir': 'misc',
+    }
+
+    with open(path, 'w') as file:
+        config.write(file)
+
+def read_config(path: str) -> dict:
+    config = ConfigParser()
+
+    config.read(path)
+
+    return {
+        'tags': config.get('default', 'tags').split(' '),
+        'home': config.get('default', 'dir')
+    }
 
 def open_config(app):
     root = tk.Toplevel(app.root)

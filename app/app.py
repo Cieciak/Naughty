@@ -1,7 +1,7 @@
 import tkinter as tk
 from .clients import available_clients, Client
 from .post import Post
-from .config import open_config
+from .config import open_config, read_config, ensure_config
 from .queue import PostQueue
 
 import os.path
@@ -50,16 +50,21 @@ class Application:
     }
 
 
-    def __init__(self, home: str = ''):
-
+    def __init__(self):
 
         self.clients: list[Client] = []
         self.current: Post = None
         self.root = tk.Tk()
-        self.home: str = home
         self.page: int = 0
 
-        self.tags: list[str] = list()
+        flag = ensure_config('app.cfg')
+
+        cfg = read_config('app.cfg')
+
+        self.home: str = cfg['home']
+        self.tags: list[str] = cfg['tags']
+
+        print(self.tags)
 
         self.queue: PostQueue = PostQueue(target=10)
 
